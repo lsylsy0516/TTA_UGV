@@ -27,15 +27,28 @@ void uavControl::sendgimbalControl(float GimbalPitch){
 
 void uavControl::sendfollow(){
         ttauav_node::action msg;
-        float n = (ros::param::param("x", 0.0)-0.435)*(0.5);
-        float e = (ros::param::param("y", 0.0)-0.113)*(0.5);
+        float x = ros::param::param("x", 0.0);
+        float y = ros::param::param("y", 0.0);
         float yaw = ros::param::param("yaw", 0.0);
-        int fly_time = 100;
+        float n, e, neyaw;
+        float epsilon = 0.0001; // 误差范围
+
+        if (fabs(x) < epsilon && fabs(y) < epsilon && fabs(yaw) < epsilon) {
+            n = e = neyaw = 0.0;
+        } else {
+            n = (x - 0.755) * 0.7;
+            e = (y - 0.50) * 0.7;
+            neyaw = yaw;
+        }
+
+        // 在这里可以使用n、e和yaw变量进行后续操作
+
+        int fly_time = 500;
 
         msg.mode = 3;
         msg.n = n;
         msg.e = e;
-        msg.yaw = yaw;
+        msg.yaw = neyaw;
         msg.fly_time = fly_time;
         pub.publish(msg);
 }
@@ -96,6 +109,7 @@ void uavControl::sendUpdate(){
     // 跟随无人车
     if (alreadyTakeoff && ifFollow){
         ROS_INFO("ifFollow: %s", ifFollow ? "true" : "false");
+
         sendfollow();
         return;
     }
@@ -165,7 +179,7 @@ int main(int argc, char *argv[])
     setlocale(LC_ALL,"");
     ros::init(argc,argv,"uavControler");
     uavControl uavControl;
-    ros::Rate loop_rate(10);
+    ros::Rate loop_rate(100);
     while (ros::ok())
     {
         uavControl.paramUpdate();

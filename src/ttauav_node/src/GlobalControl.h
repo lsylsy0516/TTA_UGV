@@ -8,6 +8,15 @@
 #include <std_msgs/String.h>
 #include <string>
 
+enum UGVStatus{
+    start = 1,
+    follow,
+    first_scan,
+    temp_landing,
+    second_takeoff,
+    final_landing
+};
+
 /**
  * @brief 全局控制发布器
  * 用于在无人车上控制无人机。
@@ -20,8 +29,9 @@ class GlobalControl
 private:
     ros::NodeHandle nh;
     ros::Subscriber sub;
-    std::string ugvStatus;
+    int ugvStatus;
     bool alreadyTakeoff;
+    int  GimbalControl;
     bool ifFollow;
     bool ifScan;
     int ScanFlag;

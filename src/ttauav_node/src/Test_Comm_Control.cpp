@@ -13,17 +13,37 @@
  * @param second_takeoff 无人机第二次起飞
  * @param final_landing 无人机降落
 */
+
+enum UGVStatus{
+    start=1,
+    follow,
+    first_scan,
+    temp_landing,
+    second_takeoff,
+    final_landing
+};
+
+const char* str_msgs[6]  ={"start",
+    "follow",
+    "first_scan",
+    "temp_landing",
+    "second_takeoff",
+    "final_landing"};
+
 int main(int argc, char **argv)
 {
+    
     ros::init(argc, argv, "test_comm_control");
     ros::NodeHandle nh;
     ros::Publisher pub = nh.advertise<std_msgs::Bool>("updateStatus", 10);
     std_msgs::Bool msg;
     // 读取参数
-    std::string status = argv[1];
+    int status = atoi (argv[1]);
     // 设置参数
     ros::param::set("ugvStatus",status);
     msg.data = true;
+    ros::Duration(2).sleep();
     pub.publish(msg);
+    ROS_INFO("new status is %s",str_msgs[status-1]);
     return 0;
 }
