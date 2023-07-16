@@ -51,7 +51,6 @@ message_generation
 add_message_files(
   FILES
   action.msg
-  position.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -137,6 +136,16 @@ include_directories(
 add_executable(uavControl src/uavControl.cpp)
 add_dependencies(uavControl ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(uavControl
+  ${catkin_LIBRARIES}
+)
+add_executable(GlobalControl src/GlobalControl.cpp)
+add_dependencies(GlobalControl ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(GlobalControl
+  ${catkin_LIBRARIES}
+)
+add_executable(Test_Comm_Control src/Test_Comm_Control.cpp)
+add_dependencies(Test_Comm_Control ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(Test_Comm_Control
   ${catkin_LIBRARIES}
 )
 ## Rename C++ executable without prefix

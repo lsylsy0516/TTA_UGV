@@ -4,10 +4,6 @@ void uavControl::sendtakeoffOrLanding(int takeoffOrLanding){
     ttauav_node::action msg;
     msg.mode = takeoffOrLanding;
     ROS_INFO("msg=%d",msg.mode);
-    // 假设开始无人机初始化好，IfActionDown = true ，那么我们停止发送takeoffOrLanding
-    // 若没有初始化好，IfActionDown不存在，那么我们一直发送takeoffOrLanding
-    // 之后若已初始化好，则只要IfActionDown = false，那么我们停止发送takeoffOrLanding
-    // 先发送一次，再判断IfActionDown是否存在，若存在且为false，则停止发送
     pub.publish(msg);
 }
 
@@ -45,6 +41,22 @@ void uavControl::sendfollow(){
 }
 // 上面所有的函数都是瞬时的，只会发送一次
 
+/**
+ * @brief 用于更新参数服务器中的参数
+ * 频率为10Hz
+ * 逻辑：
+ * 读取参数服务器中的参数，根据参数服务器中的参数，更新无人机控制发布器中的参数
+*/
+void uavControl::paramUpdate(){
+    // 读取参数
+    ActionDown = ros::param::param("IfActionDown", false);
+    takeoffOrLanding = ros::param::param("takeoffOrLanding", 0);
+    alreadyTakeoff = ros::param::param("alreadyTakeoff", false);
+    ifFollow = ros::param::param("ifFollow", false);
+    ifScan = ros::param::param("ifScan", false);
+    ScanIndex = ros::param::param("ScanIndex", 0);
+    GimbalControl =ros::param::param("GimbalControl",0);
+}
 
 /**
  * @brief 用于更新无人机控制发布
@@ -55,29 +67,30 @@ void uavControl::sendfollow(){
  * 若在扫码模式下，则按照flag发送动作序列指令
 */
 void uavControl::sendUpdate(){
-    // 读取参数
-    takeoffOrLanding = ros::param::param("takeoffOrLanding", 0);
-    ifScan = ros::param::param("ifScan", false);
-    ActionDown = ros::param::param("IfActionDown", false);
-    ifFollow = ros::param::param("ifFollow", false);
-    GimbalControl =ros::param::param("GimbalControl",0);
-
     // 如果此时无人机正在执行动作，或者参数服务器没有初始化好，则不发送指令
     if (!ActionDown){
+        if (takeoffOrLanding ){ //确定无人机在起飞或降落了,takeoffOrLanding 清零
+            ros::param::set("takeoffOrLanding",0);
+        }
+        if (GimbalControl){ //确定无人机在云台控制了,GimbalControl 清零
+            ros::param::set("GimbalControl",0);
+        }
         return;
     }
     // 起飞/降落
     if (takeoffOrLanding != 0){ 
-        ROS_INFO("takeoffOrLanding: %d", takeoffOrLanding);
         sendtakeoffOrLanding(takeoffOrLanding);
-        //更新takeoffOrLanding 和 alreadyTakeoff
 
+        //更新takeoffOrLanding 和 alreadyTakeoff
         if (takeoffOrLanding == 1){
             alreadyTakeoff = true;
+            ros::param::set("alreadyTakeoff",true);
         }else{
             alreadyTakeoff = false;
+            ros::param::set("alreadyTakeoff",false);
         }
-        ros::param::set("takeoffOrLanding",0);
+        // ros::param::set("takeoffOrLanding",0);
+        // 不能立马清零，因为无人机可能接收失败
         return;
     }
     // 跟随无人车
@@ -88,12 +101,19 @@ void uavControl::sendUpdate(){
     }
     // 扫码模式
     if( alreadyTakeoff && ifScan){
-        ROS_INFO("ifScan: %s", ifScan ? "true" : "false");
-        const std::vector<float>& scanPoint = ScanPoints[ScanFlag];
-        sendflightByVel(scanPoint[0],scanPoint[1],scanPoint[2],scanPoint[3],scanPoint[4]);
+        // 根据ScanIndex和ScanFlag发送动作序列
+        std::vector<float>* scanPoint = nullptr;
+        if (ScanIndex == 1)
+            scanPoint = &ScanPoints_1[ScanFlag];
+        else 
+            scanPoint = &ScanPoints_2[ScanFlag];
+        ROS_INFO("Scaning---Index: %d---Flag: %d", ScanIndex, ScanFlag);
+        
+        sendflightByVel((*scanPoint)[0],(*scanPoint)[1],(*scanPoint)[2],(*scanPoint)[3],(*scanPoint)[4]);
         ScanFlag++;
-        if (ScanFlag==2){
+        if (ScanFlag==2){ //扫码结束，关闭扫码模式
             ros::param::set("ifScan",false);
+            ScanFlag = 0;   //动作序列清零
         }
     }
     // 云台控制
@@ -104,31 +124,40 @@ void uavControl::sendUpdate(){
         }else{
             sendgimbalControl(-90);
         }
-        ros::param::set("GimbalControl",0);
+        // 更新GimbalControl伴随的参数
+        // ros::param::set("GimbalControl",0);
         return;
     }
 
 }
 
+/**
+ * @brief 无人机控制发布器的构造函数
+ * 初始化发布器
+ * 初始化参数
+*/
 uavControl::uavControl(){
     // 初始化
     pub = nh.advertise<ttauav_node::action>("uavAction", 10);
-    ScanPoints = {
+    ScanPoints_1 = {
+        {0.0, 0.0, 0.10, 0.0,1000},
+        {0.0, 0.0, -0.10, -90.0,1000}
+    };
+    ScanPoints_2 = {
         {0.0, 0.0, 0.10, 0.0,1000},
         {0.0, 0.0, -0.10, -90.0,1000}
     };
     ScanFlag = 0;
-    
     takeoffOrLanding = 0;
     alreadyTakeoff = false;
     ifFollow = false;
     ifScan = false;
     ros::param::set("takeoffOrLanding", 0);
     ros::param::set("ifScan", false);
-    // ros::param::set("IfActionDown", false);
     ros::param::set("ifFollow", false);
     ros::param::set("GimbalControl",0);
-    ROS_INFO("control_node inited!");
+    ros::param::set("alreadyTakeoff",false);
+    ROS_INFO("uav_control_node inited!");
 }
 
 int main(int argc, char *argv[])
@@ -139,6 +168,7 @@ int main(int argc, char *argv[])
     ros::Rate loop_rate(10);
     while (ros::ok())
     {
+        uavControl.paramUpdate();
         uavControl.sendUpdate();
         loop_rate.sleep();
     }
