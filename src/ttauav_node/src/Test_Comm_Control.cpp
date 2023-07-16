@@ -15,12 +15,13 @@
 */
 
 enum UGVStatus{
-    start=1,
+    start = 1,
     follow,
     first_scan,
-    temp_landing,
+    first_landing,
     second_takeoff,
-    final_landing
+    second_scan,
+    second_landing
 };
 
 const char* str_msgs[6]  ={"start",

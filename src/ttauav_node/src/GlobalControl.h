@@ -9,12 +9,13 @@
 #include <string>
 
 enum UGVStatus{
-    start = 1,
-    follow,
+    follow = 1,
+    first_takeoff,
     first_scan,
-    temp_landing,
+    first_landing,
     second_takeoff,
-    final_landing
+    second_scan,
+    second_landing
 };
 
 /**
@@ -28,20 +29,24 @@ class GlobalControl
 {
 private:
     ros::NodeHandle nh;
-    ros::Subscriber sub;
     int ugvStatus;
     bool alreadyTakeoff;
     int  GimbalControl;
+    bool GimbalisDown;
     bool ifFollow;
     bool ifScan;
     int ScanFlag;
     int ScanIndex;
-    void GlobalControlCallback(const std_msgs::Bool::ConstPtr& msg);
-    void GlobalControlUpdate();
+    void set_follow();
+    void set_scan(int index);
+    void set_takeoff();
+    void set_landing();
 
 public:
     GlobalControl();
+    void GlobalControlUpdate();
     void GlobalParamUpdate();
+
 };
 
 
