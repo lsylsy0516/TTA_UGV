@@ -5,31 +5,28 @@
  * @brief 本程序用于测试GlobalControl
  * 假设自己为无人机，通过修改参数服务器中的参数，来模拟无人机的状态
  * 具体设置何种状态由argv[1]决定
- * @param start 无人机起飞
+ * @param takeoff 无人机起飞
+ * @param landing 无人机临时降落
  * @param follow 无人机跟随无人车
  * @param first_scan 无人机第一次扫码
  * @param second_scan 无人机第二次扫码
- * @param temp_landing 无人机临时降落
- * @param second_takeoff 无人机第二次起飞
- * @param final_landing 无人机降落
 */
 
 enum UGVStatus{
-    start = 1,
+    takeoff = 1,
+    landing,
     follow,
     first_scan,
-    first_landing,
-    second_takeoff,
     second_scan,
-    second_landing
 };
 
-const char* str_msgs[6]  ={"start",
+const char* str_msgs[7]  ={
+    "takeoff",
+    "landing",
     "follow",
     "first_scan",
-    "temp_landing",
-    "second_takeoff",
-    "final_landing"};
+    "second_scan",
+};
 
 int main(int argc, char **argv)
 {
@@ -41,7 +38,7 @@ int main(int argc, char **argv)
     // 读取参数
     int status = atoi (argv[1]);
     // 设置参数
-    ros::param::set("ugvStatus",status);
+    ros::param::set("StatusUpdate",status);
     msg.data = true;
     ros::Duration(2).sleep();
     pub.publish(msg);

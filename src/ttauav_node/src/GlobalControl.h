@@ -8,14 +8,13 @@
 #include <std_msgs/String.h>
 #include <string>
 
+
 enum UGVStatus{
-    follow = 1,
-    first_takeoff,
+    takeoff = 1,
+    landing,
+    follow,
     first_scan,
-    first_landing,
-    second_takeoff,
     second_scan,
-    second_landing
 };
 
 /**
@@ -29,24 +28,14 @@ class GlobalControl
 {
 private:
     ros::NodeHandle nh;
+    ros::Subscriber sub;
     int ugvStatus;
-    bool alreadyTakeoff;
-    int  GimbalControl;
-    bool GimbalisDown;
-    bool ifFollow;
-    bool ifScan;
-    int ScanFlag;
-    int ScanIndex;
-    void set_follow();
-    void set_scan(int index);
-    void set_takeoff();
-    void set_landing();
+    void GlobalControlUpdate();
 
 public:
     GlobalControl();
-    void GlobalControlUpdate();
     void GlobalParamUpdate();
-
+    void StatusUpdate_cb(const std_msgs::Bool::ConstPtr& msg_p);
 };
 
 

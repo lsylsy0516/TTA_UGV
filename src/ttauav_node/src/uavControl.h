@@ -6,8 +6,21 @@
 #include <std_msgs/Bool.h>
 #include <ttauav_node/action.h>
 #include <vector>
+#include <cmath>
 
-#define MOVE 3
+#define MOVE 13
+#define TIMETHRE 20
+#define X_c 0.77
+#define Y_c 0.42
+#define Kp 0.7
+#define THETA (270-246) //度数
+#define RAD2DGR 0.01744 //转换系数
+
+enum Action{ 
+    FbV = 1,    // 速度控制
+    ToL,    // 起飞降落
+    G_C    // 云台控制
+};
 
 /**
  * @brief 无人机控制发布器
@@ -27,13 +40,13 @@ private:
     bool ActionDown;
     // 起飞/降落
     int  takeoffOrLanding;
-    bool alreadyTakeoff;
     // 跟随无人车
     bool ifFollow;
     // 扫码
     bool ifScan;
     int ScanFlag;
     int ScanIndex;
+    int Action;
     std::vector<std::vector<float>> ScanPoints_1; //第一次扫码对应Points
     std::vector<std::vector<float>> ScanPoints_2; //第二次扫码对应Points
     int  GimbalControl;

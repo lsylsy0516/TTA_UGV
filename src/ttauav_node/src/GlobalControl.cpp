@@ -10,14 +10,7 @@
 void GlobalControl::GlobalParamUpdate()
 {
     // 读取参数
-    ugvStatus = ros::param::param("ugvStatus", 0);
-
-    alreadyTakeoff = ros::param::param("alreadyTakeoff", false);
-    ifFollow = ros::param::param("ifFollow", false);
-    ifScan = ros::param::param("ifScan", false);
-    ScanFlag = ros::param::param("ScanFlag", 0);
-    ScanIndex = ros::param::param("ScanIndex", 0);
-    GimbalControl = ros::param::param("GimbalControl", 0);
+    ugvStatus = ros::param::param("StatusUpdate", 0);
 }
 
 
@@ -26,83 +19,51 @@ void GlobalControl::GlobalParamUpdate()
  */
 void GlobalControl::GlobalControlUpdate(){
     switch (ugvStatus) {
-        case first_takeoff:
-            if (!alreadyTakeoff) {                          // 先起飞
-                ros::param::set("takeoffOrLanding", 1);
-                ROS_INFO("Start game, Uav takeoff");
-            }
-            else if (!GimbalControl && !GimbalisDown){      // Gimbal need Control and is not Down
-                ros::param::set("GimbalControl",2);
-                ROS_INFO("GimbalDown");
-                GimbalisDown = true ;
-            }
+        case takeoff:
+            ros::param::set("takeoffOrLanding", 1);
+            ros::param::set("GimbalControl",0);
+            
+            ros::param::set("ifScan", false);
+            ros::param::set("ifFollow",false);
+            ROS_INFO("Uav Takeoff and GimbalDown"); 
             break;
 
         case follow:
-            if (alreadyTakeoff && GimbalisDown ) {
-                ros::param::set("ifFollow", true);
-                ROS_INFO("Uav follow Ugv");
-            }
+            ros::param::set("ifFollow", true);
+
+            ros::param::set("takeoffOrLanding", 0);
+            ros::param::set("GimbalControl",2);
+            ros::param::set("ifScan", false);
+            ROS_INFO("Start Following");
+            break;
+
+        case landing:
+            ros::param::set("takeoffOrLanding", 2);
+
+            ros::param::set("GimbalControl",0);
+            ros::param::set("ifFollow", false);
+            ros::param::set("ifScan", false);
+            ROS_INFO("Uav Landing");
             break;
 
         case first_scan:
-            if (alreadyTakeoff && ifFollow && !GimbalControl && GimbalisDown) { // last status is follow and GimbalisDown
-                ros::param::set("GimbalControl", 1);
-                ROS_INFO("GimbalUp");
-                break;
-            }
-            if (alreadyTakeoff && ifFollow && ScanIndex == 0) {
-                ros::param::set("ifFollow", false);
-                ros::param::set("ifScan", true); 
-                ros::param::set("ScanIndex", 1); //第一次的轨迹
-                ROS_INFO("Uav scan 1");
-            }
-            break;
+            ros::param::set("GimbalControl",1);
+            ros::param::set("ScanIndex",1);
+            ros::param::set("ifScan", true);
 
-        case first_landing:
-            if (alreadyTakeoff && !ifScan && ifFollow) { //扫码已经结束
-                ros::param::set("ifFollow", false);
-                ros::param::set("takeoffOrLanding", 2);
-                // 降落时会自动回正
-                // ros::param::set("GimbalControl", 1);
-                GimbalisDown = false ;
-                ROS_INFO("Uav temp_landing");
-            }
-            break;
-
-        case second_takeoff:
-            if (!alreadyTakeoff) {                          // 先起飞
-                ros::param::set("takeoffOrLanding", 1);
-                ROS_INFO("Start game, Uav takeoff");
-            }
-            else if (!GimbalControl && !GimbalisDown){      // Gimbal need Control and is not Down
-                ros::param::set("GimbalControl",2);
-                ROS_INFO("GimbalDown");
-                GimbalisDown = true ;
-            }
+            ros::param::set("takeoffOrLanding", 0);
+            ros::param::set("ifFollow", false);
+            ROS_INFO("First_Scaning");
             break;
 
         case second_scan:
-            if (alreadyTakeoff && ifFollow && !GimbalControl && GimbalisDown) { // last status is follow and GimbalisDown
-                ros::param::set("GimbalControl", 1);
-                ROS_INFO("GimbalUp");
-                break;
-            }
-            if (alreadyTakeoff && ifFollow && ScanIndex == 1) {
-                ros::param::set("ifFollow", false);
-                ros::param::set("ifScan", true); 
-                ros::param::set("ScanIndex", 2); //第二次的轨迹
-                ROS_INFO("Uav scan 1");
-            }
-            break;
+            ros::param::set("GimbalControl",1);
+            ros::param::set("ScanIndex",2);
+            ros::param::set("ifScan", true);
 
-
-        case second_landing:
-            if (alreadyTakeoff && ifFollow && ScanIndex == 2) {
-                ros::param::set("ifFollow", false);
-                ros::param::set("takeoffOrLanding", 2);
-                ROS_INFO("Uav final_landing");
-            }
+            ros::param::set("takeoffOrLanding", 0);
+            ros::param::set("ifFollow", false);
+            ROS_INFO("Second_Scaning");
             break;
 
         default:
@@ -110,20 +71,19 @@ void GlobalControl::GlobalControlUpdate(){
     }
 }
 
+void GlobalControl::StatusUpdate_cb(const std_msgs::Bool::ConstPtr& msg_p){
+    GlobalControlUpdate();
+}
 
 
 GlobalControl::GlobalControl()
 {
-    // 初始化参数
-    alreadyTakeoff = false;
-    ifFollow = false;
-    ifScan = false;
-    ScanFlag = 0;
     ugvStatus = 0;
-    GimbalisDown = false;
-
+    sub = nh.subscribe<std_msgs::Bool>("updateStatus",10,&GlobalControl::StatusUpdate_cb,this);
     ROS_INFO("GlobalControl_Inited!");
 }
+
+
 
 int main(int argc, char  *argv[]){
     setlocale(LC_ALL,"");
@@ -133,7 +93,7 @@ int main(int argc, char  *argv[]){
     while (ros::ok())
     {
         globalControl.GlobalParamUpdate();
-        globalControl.GlobalControlUpdate();
+        ros::spinOnce();
         loop_rate.sleep();
     }
     return 0;
