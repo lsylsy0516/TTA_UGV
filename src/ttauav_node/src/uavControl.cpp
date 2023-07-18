@@ -35,6 +35,12 @@ void uavControl::sendflightByVel(float velN, float velE, float velD, float velYa
     pub.publish(msg);
 }
 
+void uavControl::sendflightByDis(float disN, float disE, float disD){ //单位米
+    //单位秒
+    float time = sqrt(disN*disN+disE*disE+disD*disD)/VEL;
+    sendflightByVel(disN/time,disE/time,disD/time,0,time*1000);
+}
+
 void uavControl::sendfollow(){
         ttauav_node::action msg;
         float x = ros::param::param("x", 0.0);
@@ -102,11 +108,6 @@ void uavControl::sendUpdate(){
             ros::param::set("GimbalControl",0);
             return;
         }
-        if (ScanFlag==MOVE){ //扫码结束，关闭扫码模式
-            ros::param::set("ifScan",false);
-            ScanFlag = 0;   //动作序列清零
-            return ;
-        }
     }
 
     // 起飞/降落
@@ -135,15 +136,46 @@ void uavControl::sendUpdate(){
         {
             // 根据ScanIndex和ScanFlag发送动作序列
             std::vector<float>* scanPoint = nullptr;
-            if (ScanIndex == 1)
-                scanPoint = &ScanPoints_1[ScanFlag];
-            else 
-                scanPoint = &ScanPoints_2[ScanFlag];
+            int scanSize = 0;
+            switch (ScanIndex)
+            {
+                case:0
+                    scanPoint = &ScanPoints_0[ScanFlag];
+                    scanSize = ScanPoints_0.size();
+                    break;
+                case:1
+                    scanPoint = &ScanPoints_1[ScanFlag];
+                    scanSize = ScanPoints_1.size();
+                    break;
+                case:2
+                    scanPoint = &ScanPoints_2[ScanFlag];
+                    scanSize = ScanPoints_2.size();
+                    break;
+                case:3
+                    scanPoint = &ScanPoints_3[ScanFlag];
+                    scanSize = ScanPoints_3.size();
+                    break;
+                case:4  
+                    scanPoint = &ScanPoints_4[ScanFlag];
+                    scanSize = ScanPoints_4.size();
+                    break;  
+                case:5  
+                    scanPoint = &ScanPoints_5[ScanFlag];
+                    scanSize = ScanPoints_5.size();
+                    break;
+            }
 
             ROS_INFO("Scaning---Index: %d---Flag: %d", ScanIndex, ScanFlag);
-            sendflightByVel((*scanPoint)[0],(*scanPoint)[1],(*scanPoint)[2],(*scanPoint)[3],(*scanPoint)[4]);
-            ros::Duration((*scanPoint)[4]/1000).sleep();
+            sendflightByDis((*scanPoint)[0],(*scanPoint)[1],(*scanPoint)[2]);
+            ros::Duration((sqrt(disN*disN+disE*disE+disD*disD)/VEL)).sleep();
             ScanFlag++;
+            if (ScanFlag ==  scanSize){ // 一个动作序列发送完毕
+                ScanFlag = 0;
+                ifScan = false;
+                ros::param::set("ifScan",false); 
+                ScanIndex++;
+                ros::param::set("ScanIndex",ScanIndex);
+            }
         }
         ros::param::set("uavAction",FbV);
         return;
@@ -167,42 +199,45 @@ void uavControl::sendUpdate(){
 uavControl::uavControl(){
     // 初始化
     pub = nh.advertise<ttauav_node::action>("uavAction", 10);
-    ScanPoints_1 = {
-        {0.3, 0.0, 0.0, 0.0,2500},
-        {0.0, 0.0, -0.3, 0.0,2000},
-        {0.3, 0.0, 0.0, 0.0,2500},
-        {0.0, 0.0, 0.3, 0.0,2000},
-
-        {0.3, 0.0, 0.0, 0.0,2500},
-        {0.0, 0.0, -0.3, 0.0,2000},
-        {0.3, 0.0, 0.0, 0.0,2500},
-        {0.0, 0.0, 0.3, 0.0,2000},
-        
-        {0.3, 0.0, 0.0, 0.0,3000},
-        {0.0, 0.0, -0.3, 0.0,2000},
-        {0.3, 0.0, 0.0, 0.0,3000},
-        {0.0, 0.0, 0.3, 0.0,2000},
-
-        {0.3, 0.0, 0.0, 0.0,2000}
+    ScanPoints_0 = {    // 向右移动1.5m
+        {1.5,0,0},
     };
-    ScanPoints_2 = {
-        {-0.3, 0.0, 0.0, 0.0,2500},
-        {0.0, 0.0, -0.3, 0.0,2000},
-        {-0.3, 0.0, 0.0, 0.0,2500},
-        {0.0, 0.0, 0.3, 0.0,2000},
-
-        {-0.3, 0.0, 0.0, 0.0,2500},
-        {0.0, 0.0, -0.3, 0.0,2000},
-        {-0.3, 0.0, 0.0, 0.0,2500},
-        {0.0, 0.0, 0.3, 0.0,2000},
-        
-        {-0.3, 0.0, 0.0, 0.0,3000},
-        {0.0, 0.0, -0.3, 0.0,2000},
-        {-0.3, 0.0, 0.0, 0.0,3000},
-        {0.0, 0.0, 0.3, 0.0,2000},
-
-        {-0.3, 0.0, 0.0, 0.0,2000}
+    ScanPoints_2 = {    // 向前移动2.3m
+        {0.0,-2.3,0.0},
     };
+    ScanPoints_3 = {    // 向左移动1m
+        {-1.0,0.0,0.0},
+    };
+    ScanPoints_5 = {    // 向后移动2.3m
+        {0.0,2.3,0.0},
+    };
+    scanPoints_1 = {    //向右扫码
+        {0.0,0.0,0.0},{0.0,0.0,-0.6},{0.0,0.0,0.6}, //第一个货架 1.5m
+
+        {0.0,0.0,0.0},{0.0,0.0,-0.6},{0.0,0.0,0.6}, //第二个货架 1.5m
+
+        {0.0,0.0,0.0},{0.0,0.0,-0.6},{0.0,0.0,0.6}, //第三、四个货架 1.5m 
+
+        {0.0,0.0,0.0}, //到达货架外
+        {0.75,0.0,0.0},{0.0,0.0,-0.6},{0.75,0.0,0.0},{0.0,0.0,0.6}, //第一个货架 1.5m
+
+        {0.75,0.0,0.0},{0.0,0.0,-0.6},{0.75,0.0,0.0},{0.0,0.0,0.6}, //第二个货架 1.5m
+
+        {0.75,0.0,0.0},{0.0,0.0,-0.6},{0.75,0.0,0.0},{0.0,0.0,0.6}, //第三、四个货架 1.5m 
+
+        {1.50,0.0,0.0}, //到达货架外
+
+    };
+    ScanPoints_4 = {    //向左扫码
+        {-0.75,0.0,0.0},{0.0,0.0,-0.6},{-0.75,0.0,0.0},{0.0,0.0,0.6}, //第一个货架 1.5m
+
+        {-0.75,0.0,0.0},{0.0,0.0,-0.6},{-0.75,0.0,0.0},{0.0,0.0,0.6}, //第二个货架 1.5m
+
+        {-0.75,0.0,0.0},{0.0,0.0,-0.6},{-0.75,0.0,0.0},{0.0,0.0,0.6}, //第三、四个货架 1.5m 
+
+        {-1.50,0.0,0.0}, //到达货架外
+    }
+
     ScanFlag = 0;
     takeoffOrLanding = 0;
     ifFollow = false;

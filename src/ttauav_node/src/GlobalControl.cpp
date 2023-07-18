@@ -48,7 +48,7 @@ void GlobalControl::GlobalControlUpdate(){
 
         case first_scan:
             ros::param::set("GimbalControl",1);
-            ros::param::set("ScanIndex",1);
+            ros::param::set("ScanIndex",0); //第一次初始化扫码序列为0
             ros::param::set("ifScan", true);
 
             ros::param::set("takeoffOrLanding", 0);
@@ -58,8 +58,8 @@ void GlobalControl::GlobalControlUpdate(){
 
         case second_scan:
             ros::param::set("GimbalControl",1);
-            ros::param::set("ScanIndex",2);
             ros::param::set("ifScan", true);
+            // ros::param::set("ScanIndex",2); ,不设置ScanIndex，ScanIndex由uavControl中的scan函数自动更新
 
             ros::param::set("takeoffOrLanding", 0);
             ros::param::set("ifFollow", false);
