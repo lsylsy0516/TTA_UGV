@@ -48,9 +48,9 @@ void uavControl::sendfollow(){
         float yaw = ros::param::param("yaw", 0.0);
         float n, e, neyaw;
         float epsilon = 0.0001; // 误差范围
+        float total_velocity = 0.2;
 
         if (fabs(x) < epsilon && fabs(y) < epsilon && fabs(yaw) < epsilon) {
-            // ROS_INFO(" ");
             return;
         } else {
             n = (x - X_c) * Kp;
@@ -59,14 +59,21 @@ void uavControl::sendfollow(){
             ROS_INFO("右,前,yaw = %f,%f,%f",n,e,neyaw);
         }
 
-        // 在这里可以使用n、e和yaw变量进行后续操作
+        // Calculate total distance
+        float total_distance = sqrt(n*n + e*e);
 
-        int fly_time = 500;
+        // Calculate the proportions of the velocity
+        float velocity_n = total_velocity * (n / total_distance);
+        float velocity_e = total_velocity * (e / total_distance);
+
+        // fly_time = total distance / total velocity
+        int fly_time = int(total_distance / total_velocity)*1000;
+        float velocity_yaw =  neyaw / fly_time;
 
         msg.mode = 3;
-        msg.n = n;
-        msg.e = e;
-        msg.yaw = neyaw;
+        msg.n = velocity_n;  // 更新为速度值
+        msg.e = velocity_e;  // 更新为速度值
+        msg.yaw = velocity_yaw;
         msg.fly_time = fly_time;
         pub.publish(msg);
 }
@@ -216,7 +223,7 @@ uavControl::uavControl(){
     ScanPoints_5 = {    // 向后移动2.3m
         {0.0,2.3,0.0},
     };
-    ScanPoints_1 = {    //向右扫码
+    scanPoints_1 = {    //向右扫码
 
         {0.75,0.0,0.0},{0.0,0.0,-0.6},{0.75,0.0,0.0},{0.0,0.0,0.6}, //第一个货架 1.5m
 
