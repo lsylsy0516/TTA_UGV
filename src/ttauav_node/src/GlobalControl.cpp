@@ -50,7 +50,8 @@ void GlobalControl::GlobalControlUpdate(){
             ros::param::set("GimbalControl",1);
             ros::param::set("ScanIndex",0); //第一次初始化扫码序列为0
             ros::param::set("ifScan", true);
-
+            // ROS_INFO("ScanIndex=:%d",ros::param::param("ScanIndex",0));
+            // ROS_INFO("!!!");
             ros::param::set("takeoffOrLanding", 0);
             ros::param::set("ifFollow", false);
             ROS_INFO("First_Scaning");
@@ -73,6 +74,7 @@ void GlobalControl::GlobalControlUpdate(){
 
 void GlobalControl::StatusUpdate_cb(const std_msgs::Bool::ConstPtr& msg_p){
     GlobalControlUpdate();
+    ros::param::set("Updated",true);
 }
 
 

@@ -120,15 +120,16 @@ void uavControl::sendUpdate(){
     // 云台控制
     if (GimbalControl){
         ros::param::set("uavAction",G_C);
-        ROS_INFO("GimbalControl: %d", GimbalControl);
-        if (GimbalControl == 1){
-            sendgimbalControl(90);
-        }else{
-            sendgimbalControl(-90);
+        if(GimbalControl != Last_status) {
+            if (GimbalControl == 1) 
+                sendgimbalControl(90);
+            else    
+                sendgimbalControl(-90);
+            ROS_INFO("GimbalControl: %d", GimbalControl);
+            ros::param::set("GimbalControl",0);
+            Last_status = GimbalControl;
+            return;
         }
-        // 更新GimbalControl伴随的参数
-        ros::param::set("GimbalControl",0);
-        return;
     }
     // 扫码模式
     if(ifScan){
@@ -139,40 +140,44 @@ void uavControl::sendUpdate(){
             int scanSize = 0;
             switch (ScanIndex)
             {
-                case:0
+                case 0:
                     scanPoint = &ScanPoints_0[ScanFlag];
                     scanSize = ScanPoints_0.size();
                     break;
-                case:1
+                case 1:
                     scanPoint = &ScanPoints_1[ScanFlag];
                     scanSize = ScanPoints_1.size();
                     break;
-                case:2
+                case 2:
                     scanPoint = &ScanPoints_2[ScanFlag];
                     scanSize = ScanPoints_2.size();
                     break;
-                case:3
+                case 3:
                     scanPoint = &ScanPoints_3[ScanFlag];
                     scanSize = ScanPoints_3.size();
                     break;
-                case:4  
+                case 4:  
                     scanPoint = &ScanPoints_4[ScanFlag];
                     scanSize = ScanPoints_4.size();
                     break;  
-                case:5  
+                case 5:  
                     scanPoint = &ScanPoints_5[ScanFlag];
                     scanSize = ScanPoints_5.size();
                     break;
             }
 
             ROS_INFO("Scaning---Index: %d---Flag: %d", ScanIndex, ScanFlag);
-            sendflightByDis((*scanPoint)[0],(*scanPoint)[1],(*scanPoint)[2]);
+            float disN = (*scanPoint)[0];
+            float disE = (*scanPoint)[1];
+            float disD = (*scanPoint)[2];
+            sendflightByDis(disN,disE,disD);
             ros::Duration((sqrt(disN*disN+disE*disE+disD*disD)/VEL)).sleep();
             ScanFlag++;
             if (ScanFlag ==  scanSize){ // 一个动作序列发送完毕
                 ScanFlag = 0;
                 ifScan = false;
                 ros::param::set("ifScan",false); 
+                
                 ScanIndex++;
                 ros::param::set("ScanIndex",ScanIndex);
             }
@@ -199,26 +204,20 @@ void uavControl::sendUpdate(){
 uavControl::uavControl(){
     // 初始化
     pub = nh.advertise<ttauav_node::action>("uavAction", 10);
-    ScanPoints_0 = {    // 向右移动1.5m
-        {1.5,0,0},
+    ScanPoints_0 = {    // 向右移动1.0m
+        {1.0,0,0},
     };
     ScanPoints_2 = {    // 向前移动2.3m
         {0.0,-2.3,0.0},
     };
-    ScanPoints_3 = {    // 向左移动1m
+    ScanPoints_3 = {    // 向左移动1.0m
         {-1.0,0.0,0.0},
     };
     ScanPoints_5 = {    // 向后移动2.3m
         {0.0,2.3,0.0},
     };
-    scanPoints_1 = {    //向右扫码
-        {0.0,0.0,0.0},{0.0,0.0,-0.6},{0.0,0.0,0.6}, //第一个货架 1.5m
+    ScanPoints_1 = {    //向右扫码
 
-        {0.0,0.0,0.0},{0.0,0.0,-0.6},{0.0,0.0,0.6}, //第二个货架 1.5m
-
-        {0.0,0.0,0.0},{0.0,0.0,-0.6},{0.0,0.0,0.6}, //第三、四个货架 1.5m 
-
-        {0.0,0.0,0.0}, //到达货架外
         {0.75,0.0,0.0},{0.0,0.0,-0.6},{0.75,0.0,0.0},{0.0,0.0,0.6}, //第一个货架 1.5m
 
         {0.75,0.0,0.0},{0.0,0.0,-0.6},{0.75,0.0,0.0},{0.0,0.0,0.6}, //第二个货架 1.5m
@@ -226,7 +225,6 @@ uavControl::uavControl(){
         {0.75,0.0,0.0},{0.0,0.0,-0.6},{0.75,0.0,0.0},{0.0,0.0,0.6}, //第三、四个货架 1.5m 
 
         {1.50,0.0,0.0}, //到达货架外
-
     };
     ScanPoints_4 = {    //向左扫码
         {-0.75,0.0,0.0},{0.0,0.0,-0.6},{-0.75,0.0,0.0},{0.0,0.0,0.6}, //第一个货架 1.5m
@@ -236,12 +234,13 @@ uavControl::uavControl(){
         {-0.75,0.0,0.0},{0.0,0.0,-0.6},{-0.75,0.0,0.0},{0.0,0.0,0.6}, //第三、四个货架 1.5m 
 
         {-1.50,0.0,0.0}, //到达货架外
-    }
+    };
 
     ScanFlag = 0;
     takeoffOrLanding = 0;
     ifFollow = false;
     ifScan = false;
+    Last_status = 1;
     ros::param::set("takeoffOrLanding", 0);
     ros::param::set("ifScan", false);
     ros::param::set("ifFollow", false);

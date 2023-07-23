@@ -13,7 +13,7 @@
 #define X_c 0.77    // 无人机相对于无人车的位置前馈补偿——x
 #define Y_c 0.42    // 无人机相对于无人车的位置前馈补偿——y
 #define Kp 0.7      // 比例系数，用于计算无人机速度
-#define THETA (270-246) //度数
+#define THETA (270-261) //度数
 #define RAD2DGR 0.01744 //角度转弧度的转换系数
 #define VEL 0.3     // 无人机速度控制在0.3m/s
 
@@ -49,6 +49,8 @@ private:
     int ScanFlag;
     int ScanIndex;
     int Action;
+    int GimbalControl;
+    int Last_status;
     std::vector<std::vector<float>> ScanPoints_0; //第一次起飞到第一次扫码
     std::vector<std::vector<float>> ScanPoints_1; //第一次扫码
     std::vector<std::vector<float>> ScanPoints_2; //第一次扫码到第一次降落
@@ -56,7 +58,6 @@ private:
     std::vector<std::vector<float>> ScanPoints_3; //第二次起飞到第二次扫码
     std::vector<std::vector<float>> ScanPoints_4; //第二次扫码
     std::vector<std::vector<float>> ScanPoints_5; //第二次扫码到第二次降落
-    int  GimbalControl;
     void sendtakeoffOrLanding(int takeoffOrLanding);
     void sendflightByVel(float velN, float velE, float velD, float velYaw,int fly_time);
     void sendflightByDis(float disN, float disE, float disD);

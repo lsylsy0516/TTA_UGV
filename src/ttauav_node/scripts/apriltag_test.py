@@ -15,8 +15,6 @@ def get_camera_pose(frame):
 
     # 转换图像为灰度
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    cv2.imshow("gray",gray)
-    cv2.waitKey(10)
     # 检测 AprilTag
     result = detector.detect(gray)
 
@@ -52,7 +50,7 @@ def get_camera_pose(frame):
 
 if __name__ == "__main__":
     rospy.init_node("position_pub")
-    cap = cv2.VideoCapture('rtsp://192.168.73.195:8554/live')
+    cap = cv2.VideoCapture('rtsp://192.168.1.102:8554/live')
     #每隔0.1s发布一次相机位姿
     rate = rospy.Rate(10)
     cnt = 0
@@ -61,8 +59,14 @@ if __name__ == "__main__":
             # 读取一帧图像
             ret, frame = cap.read()
             cnt += 1 
-            if cnt % 10 == 0 : 
+            if cnt % 30 == 0 : 
+                # frame = cv2.resize(frame,(1280,720))
+                # print(frame)
+                # cv2.imshow("frame",frame)
+                # cv2.waitKey(10)
                 x,y,yaw = get_camera_pose(frame)
+                # if x!=0:
+                #    cv2.imwrite((str((x-0.675)*0.5)+"_"+str((y-0.42)*0.5)+"_"+"_"+str(yaw)+".jpg"),frame)
                 # 用参数服务器发布相机位姿,可以实时更新
                 rospy.set_param("x", x)
                 rospy.set_param("y", y)
