@@ -3,25 +3,31 @@
 ## 概述
 
 此代码定义了一个无人机（Unmanned Aerial Vehicle，UAV）控制节点，可发送各种指令来控制无人机的行为。该节点使用ROS（机器人操作系统）进行通信和控制。无人机可以执行起飞、降落、跟随目标和扫描等动作。
-
 Based on the official TTA_UAV sample code for secondary development, suitable for the DJI Intelligent Warehousing Competition
+<video width="1920" height="1080" controls>
+    <source src="./video/1.mp4" type="video/mp4">
+</video>
 
 
 ### 代码结构
+- src文件夹：包含无人机控制节点的源代码
+    - `uavControl.cpp`：包含无人机控制节点的源代码
+    - 按照10Hz的频率向`uavAction`话题发送控制指令。
 
-- `uavControl.cpp`：包含无人机控制节点的源代码
-  - 按照10Hz的频率向`uavAction`话题发送控制指令。
+    - `GlobalControl.cpp`：包含全局控制节点的源代码
+    - 通过订阅 `updateStatus`话题的消息，读取当前无人机状态，更新参数服务器中的状态值。
 
-- `GlobalControl.cpp`：包含全局控制节点的源代码
-  - 通过订阅 `updateStatus`话题的消息，读取当前无人机状态，更新参数服务器中的状态值。
-
-- `Test_Comm_Control.cpp`：包含测试代码
-  - 用于测试无人机控制节点和全局控制节点的功能。
-
-
-- `uavControl.h`：包含无人机控制节点的头文件。
-- `GlobalControl.h`：包含全局控制节点的头文件。
-
+    - `Test_Comm_Control.cpp`：包含测试代码
+    - 用于测试无人机控制节点和全局控制节点的功能。
+    - `uavControl.h`：包含无人机控制节点的头文件。
+    - `GlobalControl.h`：包含全局控制节点的头文件。
+    - `uavControl.launch`：包含无人机控制节点的启动文件。
+  
+- scripts文件夹：包含二维码识别节点的源代码
+  - `qrcode_sub.py`：二维码识别节点的源代码
+  - `uav_qrcode_pub.py`: 无人机二维码识别节点的源代码
+  - `ugv_qrcode_pub.py`: 无人车二维码识别节点的源代码
+  - `apriltag_test.py`：AprilTag识别节点的源代码
 ### 主要功能
 
 1. 无人机控制节点`uavControl_node`：
