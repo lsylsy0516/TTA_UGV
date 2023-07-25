@@ -1,0 +1,7 @@
+<launch>
+    <arg name="params" default="$(find ttauav_node)/config/config.yaml"/>
+    <rosparam command="load" file="$(arg params)"/>
+
+    <node name="uav_control_node" pkg="ttauav_node" type="uavControl" output="screen"/>
+    <node name="Global_Control" pkg="ttauav_node" type="Global_Control" output="screen"/>
+</launch>

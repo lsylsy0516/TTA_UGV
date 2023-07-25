@@ -20,7 +20,7 @@ enum UGVStatus{
     second_scan,
 };
 
-const char* str_msgs[7]  ={
+const char* str_msgs[5]  ={
     "takeoff",
     "landing",
     "follow",

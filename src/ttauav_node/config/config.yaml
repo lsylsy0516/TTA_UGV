@@ -1,0 +1,15 @@
+ifActionDown: true
+takeoffOrLanding: 0 # 1: takeoff, 2: landing 0: nothing
+ifFollow: false
+ifScan: false
+ScanIndex: 0
+GimbalControl: 0 # 0: no control, 1: up 2:down
+uavAction: 0 # 0: nothing, 1: FlybyVal 2:TakeoffOrLanding 3:GimbalControl
+
+Theta: 9 # 飞机前方与WGS84北方向夹角
+time_thre: 20 #飞机判断静止需要的时间阈值 
+x_center : 0.77 # x轴前馈
+y_center : 0.42 # y轴前馈
+kp : 0.7 # 无人机速度比例系数
+
+StatusUpdate: 0 

@@ -1,7 +1,7 @@
 #include "uavControl.h"
 
 void uavControl::sendtakeoffOrLanding(int takeoffOrLanding){
-    ros::param::set("time_thre",10);  
+  
     ttauav_node::action msg;
     msg.mode = takeoffOrLanding;
     ROS_INFO("msg=%d",msg.mode);
@@ -9,7 +9,7 @@ void uavControl::sendtakeoffOrLanding(int takeoffOrLanding){
 }
 
 void uavControl::sendgimbalControl(float GimbalPitch){
-    ros::param::set("time_thre",20);  
+ 
     ttauav_node::action msg;
     msg.mode = 4;
     msg.PTZ_pitch = GimbalPitch;
@@ -18,7 +18,7 @@ void uavControl::sendgimbalControl(float GimbalPitch){
 }
 
 void uavControl::sendflightByVel(float velN, float velE, float velD, float velYaw,int fly_time){
-    ros::param::set("time_thre",TIMETHRE); 
+
     ttauav_node::action msg;
     msg.mode = 3;
     // 这段放在无人机上就好
@@ -94,11 +94,12 @@ void uavControl::paramUpdate(){
     ScanIndex = ros::param::param("ScanIndex", 0);
     GimbalControl =ros::param::param("GimbalControl",0);
     Action = ros::param::param("uavAction",0);
+
 }
 
 /**
  * @brief 用于更新无人机控制发布
- * 频率为1Hz
+ * 频率为10Hz
  * 逻辑：
  * 若takeoffOrLanding为1，则发送起飞指令，若为2，则发送降落指令，若为0，则不发送
  * 若在已经起飞且ifFollow为true的情况下，发送follow指令
@@ -248,13 +249,6 @@ uavControl::uavControl(){
     ifFollow = false;
     ifScan = false;
     Last_status = 1;
-    ros::param::set("takeoffOrLanding", 0);
-    ros::param::set("ifScan", false);
-    ros::param::set("ifFollow", false);
-    ros::param::set("GimbalControl",0);
-    ros::param::set("alreadyTakeoff",false);
-    ros::param::set("Theta",THETA);
-    ros::param::set("time_thre",TIMETHRE);
     ROS_INFO("uav_control_node inited!");
 }
 
